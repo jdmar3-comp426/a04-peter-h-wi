@@ -1,15 +1,19 @@
 // Define app using express
-var express = require("express")
-var app = express()
+var express = require("express");
+var app = express();
+
 // Require database SCRIPT file
+var db = require("./database");
 
 // Require md5 MODULE
+var md5 = require("md5");
 
 // Make Express use its own built-in body parser
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Set server port
+let HTTP_PORT = 5000;
 
 // Start server
 app.listen(HTTP_PORT, () => {
@@ -23,6 +27,11 @@ app.get("/app/", (req, res, next) => {
 
 // Define other CRUD API endpoints using express.js and better-sqlite3
 // CREATE a new user (HTTP method POST) at endpoint /app/new/
+app.post("/app/users", (req, res) => {
+	const stmt = db.prepare("INSERT INTO userinfo (user, pass) VALUES (?, ?)")
+	const info = stmt.run(req.body.user, md5(req.body.pass));
+	res.status(201).json(stmt);
+})
 
 // READ a list of all users (HTTP method GET) at endpoint /app/users/
 app.get("/app/users", (req, res) => {	
@@ -31,11 +40,26 @@ app.get("/app/users", (req, res) => {
 });
 
 // READ a single user (HTTP method GET) at endpoint /app/user/:id
+app.get("/app/users", (req, res) => {
+	// prepare(): set up the SQL statement
+	// all(): returns every record responsive to the query in the statement
+	const stmt = db.prepare("SELECT * FROM userinfo WHERE id = ?").all(req.body.id);
+	res.status(200).json(stmt);
+})
 
 // UPDATE a single user (HTTP method PATCH) at endpoint /app/update/user/:id
+app.put("/app/users", (req, res) => {
+	const stmt = db.prepare("UPDATE userinfo SET user = COALESCE(?,user), pass = COALESCE(?,pass) WHERE id = ?");
+	const info = stmt.run(req.body.user, md5(req.body.pass), req.body.id);
+	res.status(200).json(stmt);
+})
 
 // DELETE a single user (HTTP method DELETE) at endpoint /app/delete/user/:id
-
+app.delete("/app/users", (req, res) => {
+	const stmt = db.prepare("DELETE FROM userinfo WHERE id = ?");
+	const info = stmt.run(req.body.id);
+	res.status(200).json(stmt)
+})
 // Default response for any other request
 app.use(function(req, res){
 	res.json({"message":"Endpoint not found. (404)"});
