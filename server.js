@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Set server port
-let HTTP_PORT = 5000;
+let HTTP_PORT = 5050;
 
 // Start server
 app.listen(HTTP_PORT, () => {
@@ -27,15 +27,16 @@ app.get("/app/", (req, res, next) => {
 
 // Define other CRUD API endpoints using express.js and better-sqlite3
 // CREATE a new user (HTTP method POST) at endpoint /app/new/
-app.post("/app/new", (req, res) => {
+app.post("/app/new/", (req, res) => {
 	const stmt = db.prepare("INSERT INTO userinfo (user, pass) VALUES (?, ?)")
 
 	const info = stmt.run(req.body.user, md5(req.body.pass));
-	res.status(201).json(stmt);
+	//res.json({"message": info.changes + " record created: ID " + info.lastInsertRowid + " (201)"})
+	res.status(201).json({"message": info.changes + " record created: ID " + info.lastInsertRowid + " (201)"});
 })
 
 // READ a list of all users (HTTP method GET) at endpoint /app/users/
-app.get("/app/users", (req, res) => {	
+app.get("/app/users/", (req, res) => {	
 	const stmt = db.prepare("SELECT * FROM userinfo").all();
 	res.status(200).json(stmt);
 });
@@ -44,22 +45,22 @@ app.get("/app/users", (req, res) => {
 app.get("/app/user/:id", (req, res) => {
 	// prepare(): set up the SQL statement
 	// all(): returns every record responsive to the query in the statement
-	const stmt = db.prepare("SELECT * FROM userinfo WHERE id = ?").all(req.params.id);
+	const stmt = db.prepare("SELECT * FROM userinfo WHERE id = ?").get(req.params.id);
 	res.status(200).json(stmt);
 })
 
 // UPDATE a single user (HTTP method PATCH) at endpoint /app/update/user/:id
-app.put("/app/update/user/:id", (req, res) => {
+app.patch("/app/update/user/:id/", (req, res) => {
 	const stmt = db.prepare("UPDATE userinfo SET user = COALESCE(?,user), pass = COALESCE(?,pass) WHERE id = ?");
-	const info = stmt.run(req.body.user, md5(req.body.pass), req.body.id);
-	res.status(200).json(stmt);
+	const info = stmt.run(req.body.user, md5(req.body.pass), req.params.id);
+	res.status(200).json({"message": info.changes + " record updated: ID " + req.params.id + " (200)"})
 })
 
 // DELETE a single user (HTTP method DELETE) at endpoint /app/delete/user/:id
 app.delete("/app/delete/user/:id", (req, res) => {
 	const stmt = db.prepare("DELETE FROM userinfo WHERE id = ?");
-	const info = stmt.run(req.body.id);
-	res.status(200).json(stmt)
+	const info = stmt.run(req.params.id);
+	res.status(200).json({"message": info.changes + " record deleted: ID " + req.params.id + " (200)"});
 })
 // Default response for any other request
 app.use(function(req, res){
