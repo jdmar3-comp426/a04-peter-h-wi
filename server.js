@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Set server port
-let HTTP_PORT = 5050;
+let HTTP_PORT = 5000;
 
 // Start server
 app.listen(HTTP_PORT, () => {
